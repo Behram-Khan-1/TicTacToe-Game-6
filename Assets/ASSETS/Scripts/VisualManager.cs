@@ -5,18 +5,37 @@ public class VisualManager : NetworkBehaviour
 {
     [SerializeField] private Transform crossPrefeb;
     [SerializeField] private Transform circlePrefab;
-    private const int GRIDSIZE = 3;
+    [SerializeField] private Transform greenWinLine;
+    private const float GRIDSIZE = 3f;
     void Start()
     {
         GameManager.Instance.ClickedOnGrid += ClickedOnGridVisual;
+        GameManager.Instance.OnGameWin += GameManager_OnGameWin;
     }
 
-    // Update is called once per frames
-    void Update()
+    void GameManager_OnGameWin(GameManager.Line line, GameManager.PlayerType playerType)
     {
-
+        float zAngle = 0f;
+        switch (line.orientation)
+        {
+            case GameManager.Orientation.Horizontal:
+                zAngle = 0f;
+                break;
+            case GameManager.Orientation.Vertical:
+                zAngle = 90f;
+                break;
+            case GameManager.Orientation.DiagonalA:
+                zAngle = 45f;
+                break;
+            case GameManager.Orientation.DiagonalB:
+                zAngle = 135f;
+                break;
+        }
+        Transform spawnedObject = Instantiate(greenWinLine,
+         GetGridToWorldPosition(line.centerGridVector.x, line.centerGridVector.y),
+         Quaternion.Euler(0, 0, zAngle));
+        spawnedObject.GetComponent<NetworkObject>().Spawn(true); //Spawns objects to clients too.
     }
-
 
     void ClickedOnGridVisual(int x, int y, GameManager.PlayerType playerType)
     {
@@ -39,17 +58,16 @@ public class VisualManager : NetworkBehaviour
                 prefab = crossPrefeb;
                 break;
         }
-        Transform spawnedObject = Instantiate(prefab);
-        Debug.Log("About to call GridToWorld");
-        spawnedObject.position = GetGridToWorldPosition(x, y);
+
+        Transform spawnedObject = Instantiate(prefab, GetGridToWorldPosition(x, y), Quaternion.identity);
         spawnedObject.GetComponent<NetworkObject>().Spawn(true); //Spawns objects to clients too.
     }
 
-    Vector2 GetGridToWorldPosition(int x, int y)
+    private Vector2 GetGridToWorldPosition(int x, int y)
     {
-        Debug.Log(x * GRIDSIZE + " " +  y * GRIDSIZE);
-        return new Vector2(  (y * GRIDSIZE ) - GRIDSIZE, (x * GRIDSIZE) - GRIDSIZE);
+        Debug.Log(((y * GRIDSIZE) - GRIDSIZE) + " " + ((x * GRIDSIZE) - GRIDSIZE));
+        return new Vector2((y * GRIDSIZE) - GRIDSIZE, (x * GRIDSIZE) - GRIDSIZE);
     }
-   
+
 }
 
